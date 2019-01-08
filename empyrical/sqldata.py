@@ -61,6 +61,7 @@ def get_single_stock_equity(symbol, start_date, end_date):
         df = pd.DataFrame.from_records(query.all())
         df.columns = DAILY_COLS
         df['change_pct'] = df['change_pct'] / 100.0
+        df['date'] = pd.to_datetime(df['date'])
         df.set_index('date', inplace=True)
         return df.tz_localize('utc')['change_pct']
 
@@ -89,8 +90,8 @@ def get_single_index_equity(symbol, start_date, end_date):
     >>> symbol = '000300'
     >>> start_date = '2017-9-4'
     >>> end_date = pd.Timestamp('2017-9-8')
-    >>> df = get_single_index_equity(symbol, start_date, end_date)
-    >>> df
+    >>> s = get_single_index_equity(symbol, start_date, end_date)
+    >>> s
             date  change_pct
     0  2017-09-04    0.003936
     1  2017-09-05    0.002972
@@ -111,6 +112,7 @@ def get_single_index_equity(symbol, start_date, end_date):
         df = pd.DataFrame.from_records(query.all())
         df.columns = DAILY_COLS
         df['change_pct'] = df['change_pct'] / 100.0
+        df['date'] = pd.to_datetime(df['date'])
         df.set_index('date', inplace=True)
         return df.tz_localize('utc')['change_pct']
 
@@ -171,4 +173,4 @@ def get_treasury_data(start_date, end_date):
         df['2year'] = (df['1year'] + df['3year']) / 2
         df.index = pd.to_datetime(df['date'].values)
         df.drop('date', axis=1, inplace=True)
-        return df
+        return df.tz_localize('utc')
