@@ -41,8 +41,7 @@ classifiers = [
     "Programming Language :: Python :: 2",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 2.7",
-    "Programming Language :: Python :: 3.4",
-    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.7",
     "License :: OSI Approved :: Apache Software License",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",
@@ -59,7 +58,7 @@ test_reqs = [
 
 requirements = [
     'numpy>=1.9.2',
-    'pandas>=0.16.1',
+    'pandas>=0.23.4',
     'scipy>=0.15.1',
     "pandas-datareader>=0.2",
     'bottleneck>=1.0.0'
