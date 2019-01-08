@@ -1,7 +1,5 @@
 """
-1. 仅仅用于收益率计算，无需太多列(减少数据传输，提高速度)
-2. 不使用close， 原始价格因停牌，价格标记为0，第一行设定为Nan?
-3. 直接调用涨跌幅
+总本地数据库查询单个股票或指数代码的期间收益率、国库券利率
 """
 import pandas as pd
 
@@ -41,12 +39,12 @@ def get_single_stock_equity(symbol, start_date, end_date):
     >>> end_date = '2017-9-8'
     >>> s = get_single_stock_equity(symbol, start_date, end_date)
     >>> s
-            date  change_pct
-    0  2017-09-04    0.012733
-    1  2017-09-05    0.001209
-    2  2017-09-06   -0.010625
-    3  2017-09-07    0.000000
-    4  2017-09-08    0.000488
+    date
+    2017-09-04 00:00:00+00:00    0.012733
+    2017-09-05 00:00:00+00:00    0.001209
+    2017-09-06 00:00:00+00:00   -0.010625
+    2017-09-07 00:00:00+00:00    0.000000
+    Name: 000333, dtype: float64
     """
     start_date, end_date = sanitize_dates(start_date, end_date)
     with session_scope('szsh') as sess:
@@ -94,12 +92,13 @@ def get_single_index_equity(symbol, start_date, end_date):
     >>> end_date = pd.Timestamp('2017-9-8')
     >>> s = get_single_index_equity(symbol, start_date, end_date)
     >>> s
-            date  change_pct
-    0  2017-09-04    0.003936
-    1  2017-09-05    0.002972
-    2  2017-09-06   -0.001970
-    3  2017-09-07   -0.005086
-    4  2017-09-08   -0.001014
+    date
+    2017-09-04 00:00:00+00:00    0.003936
+    2017-09-05 00:00:00+00:00    0.002972
+    2017-09-06 00:00:00+00:00   -0.001970
+    2017-09-07 00:00:00+00:00   -0.005086
+    2017-09-08 00:00:00+00:00   -0.001014
+    Name: 000300, dtype: float64
     """
     start_date, end_date = sanitize_dates(start_date, end_date)
     with session_scope('szsh') as sess:
