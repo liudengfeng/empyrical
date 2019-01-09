@@ -6,7 +6,7 @@ import pandas as pd
 from cnswd.utils import sanitize_dates
 from cnswd.sql.base import session_scope
 from cnswd.sql.szsh import StockDaily, IndexDaily, Treasury
-
+from cnswd.websource.wy import get_main_index
 DAILY_COLS = ['date', 'change_pct']
 TREASURY_COLS = ['date', '1month', '3month', '6month',
                  '1year', '3year',
@@ -116,7 +116,12 @@ def get_single_index_equity(symbol, start_date, end_date):
         df['date'] = pd.to_datetime(df['date'])
         df.set_index('date', inplace=True)
         res = df.tz_localize('utc')['change_pct']
-        res.name = symbol
+        names = get_main_index()
+        try:
+            name = names.loc[symbol,'name']
+        except KeyError:
+            name = symbol
+        res.name = name
         return res
 
 
