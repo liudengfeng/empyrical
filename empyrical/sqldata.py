@@ -64,7 +64,8 @@ def get_single_stock_equity(symbol, start_date, end_date):
         res = df.tz_localize('utc')['change_pct']
         res.name = symbol
         # 原始数据中含nan
-        return res.fillna(0.0, inplace=True)
+        res.fillna(0.0, inplace=True)
+        return res
 
 
 def get_single_index_equity(symbol, start_date, end_date):
