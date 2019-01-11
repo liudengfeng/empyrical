@@ -63,7 +63,8 @@ def get_single_stock_equity(symbol, start_date, end_date):
         df.set_index('date', inplace=True)
         res = df.tz_localize('utc')['change_pct']
         res.name = symbol
-        return res
+        # 原始数据中含nan
+        return res.fillna(0.0, inplace=True)
 
 
 def get_single_index_equity(symbol, start_date, end_date):
@@ -118,7 +119,7 @@ def get_single_index_equity(symbol, start_date, end_date):
         res = df.tz_localize('utc')['change_pct']
         names = get_main_index()
         try:
-            name = names.loc[symbol,'name']
+            name = names.loc[symbol, 'name']
         except KeyError:
             name = symbol
         res.name = name
