@@ -29,7 +29,7 @@ def get_single_stock_equity(symbol, start_date, end_date):
     return
     ----------
     Series: Series对象。
-    
+
     **注意** 返回涨跌幅（浮点小数），非百分比
 
     Examples
@@ -55,6 +55,9 @@ def get_single_stock_equity(symbol, start_date, end_date):
             StockDaily.股票代码 == symbol
         ).filter(
             StockDaily.日期.between(start_date, end_date)
+        ).order_by(
+            # 务必按日期升序排列
+            StockDaily.日期.asc()
         )
         df = pd.DataFrame.from_records(query.all())
         df.columns = DAILY_COLS
@@ -111,6 +114,9 @@ def get_single_index_equity(symbol, start_date, end_date):
             IndexDaily.指数代码 == symbol
         ).filter(
             IndexDaily.日期.between(start_date, end_date)
+        ).order_by(
+            # 务必按日期升序排列
+            IndexDaily.日期.asc()
         )
         df = pd.DataFrame.from_records(query.all())
         df.columns = DAILY_COLS
