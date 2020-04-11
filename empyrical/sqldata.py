@@ -4,7 +4,7 @@
 import pandas as pd
 
 from cnswd.utils import sanitize_dates
-from cnswd.reader import daily_history, treasury
+from cnswd.store import WyStockDailyStore, TreasuryDateStore
 from cnswd.websource.wy import get_main_index
 DAILY_COLS = ['date', 'change_pct']
 TREASURY_COL_MAPS = {
@@ -30,7 +30,9 @@ TREASURY_COL_MAPS = {
 def _get_single_stock_equity(symbol, start_date, end_date, is_index,
                              index_name):
     start_date, end_date = sanitize_dates(start_date, end_date)
-    df = daily_history(symbol, start_date, end_date, is_index)[['日期', '涨跌幅']]
+    with WyStockDailyStore() as store:
+        df = store.query(codes=symbol, start=start_date,
+                         end=end_date).reset_index()[['日期', '涨跌幅']]
     df.columns = DAILY_COLS
     df['change_pct'] = df['change_pct'] / 100.0
     df['date'] = pd.to_datetime(df['date'])
@@ -150,10 +152,11 @@ def get_treasury_data(start_date, end_date):
     2017-09-07 00:00:00+00:00	0.023983	0.028365	0.029749	0.030045	0.033154
     2017-09-08 00:00:00+00:00	0.023839	0.028892	0.029418	0.029667	0.033479
     """
-    df = treasury(start_date, end_date)
+    with TreasuryDateStore() as store:
+        df = store.query(start_date, end_date)
     # 缺少2年数据，使用简单平均插值
     value = (df['y1'] + df['y3']) / 2
     df.insert(7, '2year', value)
     df.rename(columns=TREASURY_COL_MAPS, inplace=True)
-    df.index = pd.DatetimeIndex(df.index)
+    # df.index = pd.DatetimeIndex(df.index)
     return df.tz_localize('UTC')
