@@ -4,8 +4,9 @@
 import pandas as pd
 
 from cnswd.utils import sanitize_dates
-from cnswd.store import WyStockDailyStore, TreasuryDateStore
+from cnswd.store import WyStockDailyStore, TreasuryDateStore, WyIndexDailyStore
 from cnswd.websource.wy import get_main_index
+
 DAILY_COLS = ['date', 'change_pct']
 TREASURY_COL_MAPS = {
     'm0': 'cash',
@@ -30,13 +31,15 @@ TREASURY_COL_MAPS = {
 def _get_single_stock_equity(symbol, start_date, end_date, is_index,
                              index_name):
     start_date, end_date = sanitize_dates(start_date, end_date)
-    with WyStockDailyStore() as store:
+    class_ = WyIndexDailyStore if is_index else WyStockDailyStore
+    with class_() as store:
         df = store.query(codes=symbol, start=start_date,
                          end=end_date).reset_index()[['日期', '涨跌幅']]
     df.columns = DAILY_COLS
     df['change_pct'] = df['change_pct'] / 100.0
     df['date'] = pd.to_datetime(df['date'])
     df.set_index('date', inplace=True)
+    df.sort_index(inplace=True)
     res = df.tz_localize('utc')['change_pct']
     res.name = index_name
     # 原始数据中含nan
@@ -66,15 +69,17 @@ def get_single_stock_equity(symbol, start_date, end_date):
     Examples
     --------
     >>> symbol = '000333'
-    >>> start_date = '2017-9-4'
-    >>> end_date = '2017-9-8'
+    >>> start_date = '2020-05-15'
+    >>> end_date = '2020-05-25'
     >>> s = get_single_stock_equity(symbol, start_date, end_date)
     >>> s
     date
-    2017-09-04 00:00:00+00:00    0.012733
-    2017-09-05 00:00:00+00:00    0.001209
-    2017-09-06 00:00:00+00:00   -0.010625
-    2017-09-07 00:00:00+00:00    0.000000
+    2020-05-15 00:00:00+00:00   -0.018103
+    2020-05-18 00:00:00+00:00    0.009482
+    2020-05-19 00:00:00+00:00    0.022091
+    2020-05-20 00:00:00+00:00    0.004595
+    2020-05-21 00:00:00+00:00   -0.005252
+    2020-05-22 00:00:00+00:00   -0.027248
     Name: 000333, dtype: float64
     """
     return _get_single_stock_equity(symbol, start_date, end_date, False,
@@ -103,17 +108,18 @@ def get_single_index_equity(symbol, start_date, end_date):
     Examples
     --------
     >>> symbol = '000300'
-    >>> start_date = '2017-9-4'
-    >>> end_date = pd.Timestamp('2017-9-8')
+    >>> start_date = '2020-05-15'
+    >>> end_date = '2020-05-25'
     >>> s = get_single_index_equity(symbol, start_date, end_date)
     >>> s
     date
-    2017-09-04 00:00:00+00:00    0.003936
-    2017-09-05 00:00:00+00:00    0.002972
-    2017-09-06 00:00:00+00:00   -0.001970
-    2017-09-07 00:00:00+00:00   -0.005086
-    2017-09-08 00:00:00+00:00   -0.001014
-    Name: 000300, dtype: float64
+    2020-05-15 00:00:00+00:00   -0.003160
+    2020-05-18 00:00:00+00:00    0.002580
+    2020-05-19 00:00:00+00:00    0.008498
+    2020-05-20 00:00:00+00:00   -0.005315
+    2020-05-21 00:00:00+00:00   -0.005445
+    2020-05-22 00:00:00+00:00   -0.022927
+    Name: 沪深300, dtype: float64
     """
     names = get_main_index()
     try:
@@ -140,17 +146,17 @@ def get_treasury_data(start_date, end_date):
 
     Examples
     --------
-    >>> start_date = '2017-9-4'
-    >>> end_date = pd.Timestamp('2017-9-18')
+    >>> start_date = '2020-05-15'
+    >>> end_date = '2020-05-25'
     >>> df = get_treasury_data(start_date, end_date)
     >>> df.iloc[:5, :5]
         cash	1month	2month	3month	6month
     date					
-    2017-09-04 00:00:00+00:00	0.024586	0.028337	0.029225	0.029352	0.033742
-    2017-09-05 00:00:00+00:00	0.024269	0.028273	0.029292	0.029284	0.033743
-    2017-09-06 00:00:00+00:00	0.024364	0.028668	0.029463	0.029742	0.033744
-    2017-09-07 00:00:00+00:00	0.023983	0.028365	0.029749	0.030045	0.033154
-    2017-09-08 00:00:00+00:00	0.023839	0.028892	0.029418	0.029667	0.033479
+    2020-05-15 00:00:00+00:00	0.006838	0.009496	0.009506	0.010076	0.011570
+    2020-05-18 00:00:00+00:00	0.006838	0.009369	0.009611	0.010414	0.011701
+    2020-05-19 00:00:00+00:00	0.009838	0.009425	0.010490	0.010307	0.012016
+    2020-05-20 00:00:00+00:00	0.008188	0.009084	0.010712	0.011012	0.012378
+    2020-05-21 00:00:00+00:00	0.007028	0.008569	0.010695	0.011032	0.012465
     """
     with TreasuryDateStore() as store:
         df = store.query(start_date, end_date)
