@@ -4,7 +4,8 @@
 import pandas as pd
 
 from cnswd.utils import sanitize_dates
-from cnswd.store import WyStockDailyStore, TreasuryDateStore, WyIndexDailyStore
+# from cnswd.store import WyStockDailyStore, TreasuryDateStore, WyIndexDailyStore
+from cnswd.mongodb import get_db
 from cnswd.websource.wy import get_main_index
 
 DAILY_COLS = ['date', 'change_pct']
@@ -28,13 +29,22 @@ TREASURY_COL_MAPS = {
 }
 
 
+def query(collection, start, end):
+    predicate = {'日期': {'$gte': start, '$lte': end}}
+    projection = {'日期': 1, '涨跌幅': 1, '_id': 0}
+    sort = [('日期', 1)]
+    cursor = collection.find(predicate, projection, sort=sort)
+    df = pd.DataFrame.from_records(cursor)
+    return df
+
+
 def _get_single_stock_equity(symbol, start_date, end_date, is_index,
                              index_name):
     start_date, end_date = sanitize_dates(start_date, end_date)
-    class_ = WyIndexDailyStore if is_index else WyStockDailyStore
-    with class_() as store:
-        df = store.query(codes=symbol, start=start_date,
-                         end=end_date).reset_index()[['日期', '涨跌幅']]
+    db_name = 'wy_index_daily' if is_index else 'wy_stock_daily'
+    db = get_db(db_name)
+    collection = db[symbol]
+    df = query(collection, start_date, end_date)
     df.columns = DAILY_COLS
     df['change_pct'] = df['change_pct'] / 100.0
     df['date'] = pd.to_datetime(df['date'])
@@ -64,7 +74,7 @@ def get_single_stock_equity(symbol, start_date, end_date):
     ----------
     Series: Series对象。
 
-    **注意** 返回涨跌幅（浮点小数），非百分比
+    **注意** 返回涨跌幅，非百分比
 
     Examples
     --------
@@ -80,6 +90,7 @@ def get_single_stock_equity(symbol, start_date, end_date):
     2020-05-20 00:00:00+00:00    0.004595
     2020-05-21 00:00:00+00:00   -0.005252
     2020-05-22 00:00:00+00:00   -0.027248
+    2020-05-25 00:00:00+00:00   -0.004902
     Name: 000333, dtype: float64
     """
     return _get_single_stock_equity(symbol, start_date, end_date, False,
@@ -103,7 +114,7 @@ def get_single_index_equity(symbol, start_date, end_date):
     ----------
     Series: Series对象。
 
-    **注意** 其实返回的是涨跌幅，并非百分比
+    **注意** 返回涨跌幅，非百分比
 
     Examples
     --------
@@ -119,6 +130,7 @@ def get_single_index_equity(symbol, start_date, end_date):
     2020-05-20 00:00:00+00:00   -0.005315
     2020-05-21 00:00:00+00:00   -0.005445
     2020-05-22 00:00:00+00:00   -0.022927
+    2020-05-25 00:00:00+00:00    0.001376
     Name: 沪深300, dtype: float64
     """
     names = get_main_index()
@@ -158,11 +170,17 @@ def get_treasury_data(start_date, end_date):
     2020-05-20 00:00:00+00:00	0.008188	0.009084	0.010712	0.011012	0.012378
     2020-05-21 00:00:00+00:00	0.007028	0.008569	0.010695	0.011032	0.012465
     """
-    with TreasuryDateStore() as store:
-        df = store.query(start_date, end_date)
+    start, end = sanitize_dates(start_date, end_date)
+    db = get_db()
+    collection = db['国债利率']
+    predicate = {'date': {'$gte': start, '$lte': end}}
+    projection = {'_id': 0}
+    sort = [('date', 1)]
+    cursor = collection.find(predicate, projection, sort=sort)
+    df = pd.DataFrame.from_records(cursor)
     # 缺少2年数据，使用简单平均插值
     value = (df['y1'] + df['y3']) / 2
     df.insert(7, '2year', value)
     df.rename(columns=TREASURY_COL_MAPS, inplace=True)
-    # df.index = pd.DatetimeIndex(df.index)
+    df.set_index('date', inplace=True)
     return df.tz_localize('UTC')
