@@ -58,10 +58,10 @@ test_reqs = [
 
 requirements = [
     'numpy>=1.9.2',
-    'pandas>=0.23.4',
+    'pandas>=1.0.5',
     'scipy>=0.15.1',
-    "pandas-datareader>=0.2",
-    'bottleneck>=1.0.0'
+    # "pandas-datareader>=0.2",
+    # 'bottleneck>=1.0.0'
 ]
 
 # ReadTheDocs does not handle bottleneck properly, remove if running on RTD

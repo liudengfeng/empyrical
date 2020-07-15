@@ -29,6 +29,10 @@ from .stats import (
     beta,
     beta_aligned,
     cagr,
+    beta_fragility_heuristic,
+    beta_fragility_heuristic_aligned,
+    gpd_risk_estimates,
+    gpd_risk_estimates_aligned,
     calmar_ratio,
     capture,
     conditional_value_at_risk,
@@ -69,6 +73,7 @@ from .periods import (
     DAILY,
     WEEKLY,
     MONTHLY,
+    QUARTERLY,
     YEARLY
 )
 

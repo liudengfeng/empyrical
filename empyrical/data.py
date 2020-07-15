@@ -4,7 +4,6 @@
 import pandas as pd
 
 from cnswd.utils import sanitize_dates
-# from cnswd.store import WyStockDailyStore, TreasuryDateStore, WyIndexDailyStore
 from cnswd.mongodb import get_db
 from cnswd.websource.wy import get_main_index
 

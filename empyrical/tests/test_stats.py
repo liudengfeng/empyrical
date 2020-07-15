@@ -12,11 +12,11 @@ from pandas.core.generic import NDFrame
 from scipy import stats
 from six import iteritems, wraps
 
-try:
-    from pandas.testing import assert_index_equal
-except ImportError:
-    # This moved in pandas 0.20.
-    from pandas.util.testing import assert_index_equal
+# try:
+#     from pandas.testing import assert_index_equal
+# except ImportError:
+# This moved in pandas 0.20.
+from pandas.testing import assert_index_equal
 
 import empyrical
 import empyrical.utils as emutils
@@ -216,11 +216,15 @@ class TestStats(BaseTestCase):
                                               0.0]),
         (simple_benchmark, empyrical.MONTHLY, [0.01,
                                                0.03030099999999991]),
+        (simple_benchmark, empyrical.QUARTERLY, [0.04060401]),
         (simple_benchmark, empyrical.YEARLY, [0.040604010000000024]),
         (weekly_returns, empyrical.MONTHLY, [0.0, 0.087891200000000058,
                                              -0.04500459999999995]),
         (weekly_returns, empyrical.YEARLY, [0.038931091700480147]),
-        (monthly_returns, empyrical.YEARLY, [0.038931091700480147])
+        (monthly_returns, empyrical.YEARLY, [0.038931091700480147]),
+        (monthly_returns, empyrical.QUARTERLY, [0.11100000000000021,
+                                                0.008575999999999917,
+                                                -0.072819999999999996])
     ])
     def test_aggregate_returns(self, returns, convert_to, expected):
         returns = self.empyrical(pandas_only=True).aggregate_returns(
@@ -729,7 +733,7 @@ class TestStats(BaseTestCase):
     @parameterized.expand([
         (empty_returns, simple_benchmark, (np.nan, np.nan)),
         (one_return, one_return, (np.nan, np.nan)),
-        (mixed_returns, negative_returns[1:], (-8.306666666666668,
+        (mixed_returns, negative_returns[1:], (-0.9997853834885004,
                                                -0.71296296296296313)),
         (mixed_returns, mixed_returns, (0.0, 1.0)),
         (mixed_returns, -mixed_returns, (0.0, -1.0)),
@@ -797,6 +801,7 @@ class TestStats(BaseTestCase):
         benchmark = pd.Series(
             bench,
             index=pd.date_range('2000-1-30', periods=1000, freq='D'))
+
         # Translate returns and generate alphas and betas.
         returns_depressed = returns-translation
         returns_raised = returns+translation
@@ -810,11 +815,13 @@ class TestStats(BaseTestCase):
         # Alpha should change proportionally to how much returns were
         # translated.
         assert_almost_equal(
-            (alpha_standard - alpha_depressed)/252,
+            ((alpha_standard + 1) ** (1/252)) -
+            ((alpha_depressed + 1) ** (1/252)),
             translation,
             DECIMAL_PLACES)
         assert_almost_equal(
-            (alpha_raised - alpha_standard)/252,
+            ((alpha_raised + 1) ** (1/252)) -
+            ((alpha_standard + 1) ** (1/252)),
             translation,
             DECIMAL_PLACES)
         # Beta remains constant.
@@ -1045,6 +1052,51 @@ class TestStats(BaseTestCase):
             noisy_cagr_2,
             1)
 
+    # regression tests for beta_fragility_heuristic
+    @parameterized.expand([
+        (one_return, one_return, np.nan),
+        (positive_returns, simple_benchmark, 0.0),
+        (mixed_returns, simple_benchmark, 0.09),
+        (negative_returns, simple_benchmark, -0.029999999999999999),
+    ])
+    def test_beta_fragility_heuristic(self, returns, factor_returns, expected):
+        assert_almost_equal(
+            self.empyrical.beta_fragility_heuristic(returns, factor_returns),
+            expected,
+            DECIMAL_PLACES)
+
+    mixed_returns_expected_gpd_risk_result = [0.1,
+                                              0.10001255835838491,
+                                              1.5657360018514067e-06,
+                                              0.4912526273742347,
+                                              0.59126595492541179]
+
+    negative_returns_expected_gpd_risk_result = [0.05,
+                                                 0.068353586736348199,
+                                                 9.4304947982121171e-07,
+                                                 0.34511639904932639,
+                                                 0.41347032855617882]
+
+    # regression tests for gpd_risk_estimates
+    @parameterized.expand([
+        (one_return, [0, 0, 0, 0, 0]),
+        (empty_returns, [0, 0, 0, 0, 0]),
+        (simple_benchmark, [0, 0, 0, 0, 0]),
+        (positive_returns, [0, 0, 0, 0, 0]),
+        (negative_returns, negative_returns_expected_gpd_risk_result),
+        (mixed_returns, mixed_returns_expected_gpd_risk_result),
+        (flat_line_1, [0, 0, 0, 0]),
+        (weekly_returns, mixed_returns_expected_gpd_risk_result),
+        (monthly_returns, mixed_returns_expected_gpd_risk_result),
+    ])
+    def test_gpd_risk_estimates(self, returns, expected):
+        result = self.empyrical.gpd_risk_estimates_aligned(returns)
+        for result_item, expected_item in zip(result, expected):
+            assert_almost_equal(
+                result_item,
+                expected_item,
+                DECIMAL_PLACES)
+
     @parameterized.expand([
         (empty_returns, 6, []),
         (negative_returns, 6, [-0.2282, -0.2745, -0.2899, -0.2747])
@@ -1104,8 +1156,8 @@ class TestStats(BaseTestCase):
          [(np.nan, np.nan)] * len(simple_benchmark)),
         (one_return, one_return, 1, [(np.nan, np.nan)]),
         (mixed_returns, negative_returns,
-         6, [(-3.81286957, -0.7826087), (-4.03558719, -0.76156584),
-             (-2.66915888, -0.61682243), (-7.8987541, -0.41311475)]),
+         6, [(-0.97854954, -0.7826087), (-0.9828927, -0.76156584),
+             (-0.93166924, -0.61682243), (-0.99967288, -0.41311475)]),
         (mixed_returns, mixed_returns,
          6, [(0.0, 1.0), (0.0, 1.0), (0.0, 1.0), (0.0, 1.0)]),
         (mixed_returns, -mixed_returns,
@@ -1205,7 +1257,7 @@ class TestStats(BaseTestCase):
         (empty_returns, simple_benchmark, (np.nan, np.nan)),
         (one_return, one_return, (np.nan, np.nan)),
         (mixed_returns[1:], negative_returns[1:],
-         (-8.306666666666668, -0.71296296296296313)),
+         (-0.9997853834885004, -0.71296296296296313)),
         (mixed_returns, mixed_returns, (0.0, 1.0)),
         (mixed_returns, -mixed_returns, (0.0, -1.0))
     ])
@@ -1227,7 +1279,7 @@ class TestStats(BaseTestCase):
         (empty_returns, simple_benchmark, (np.nan, np.nan)),
         (one_return, one_return, (np.nan, np.nan)),
         (mixed_returns[1:], positive_returns[1:],
-         (0.3599999999999995, 0.4285714285)),
+         (0.432961242076658, 0.4285714285)),
         (mixed_returns, mixed_returns, (0.0, 1.0)),
         (mixed_returns, -mixed_returns, (0.0, -1.0))
     ])
@@ -1688,7 +1740,8 @@ class PassArraysEmpyricalProxy(ConvertPandasEmpyricalProxy):
         )
 
     def __getattr__(self, item):
-        if item in ('alpha', 'beta', 'alpha_beta'):
+        if item in ('alpha', 'beta', 'alpha_beta', 'beta_fragility_heuristic',
+                    'gpd_risk_estimates'):
             item += '_aligned'
 
         return super(PassArraysEmpyricalProxy, self).__getattr__(item)
