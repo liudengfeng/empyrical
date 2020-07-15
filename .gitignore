@@ -68,3 +68,5 @@ target/
 .vscode/
 *.egg-info/
 .vs/
+report.html
+assets/style.css
