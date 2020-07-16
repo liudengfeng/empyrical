@@ -1198,7 +1198,8 @@ def alpha(returns,
     float
         Alpha.
     """
-    if isinstance(returns, np.ndarray) and isinstance(factor_returns, np.ndarray):
+    if not (isinstance(returns, np.ndarray) and
+            isinstance(factor_returns, np.ndarray)):
         returns, factor_returns = _aligned_series(returns, factor_returns)
 
     return alpha_aligned(
