@@ -6,6 +6,7 @@ import pandas as pd
 from cnswd.utils import sanitize_dates
 from cnswd.mongodb import get_db
 from cnswd.websource.wy import get_main_index
+from trading_calendars import get_calendar
 
 DAILY_COLS = ['date', 'change_pct']
 TREASURY_COL_MAPS = {
@@ -182,4 +183,10 @@ def get_treasury_data(start_date, end_date):
     df.insert(7, '2year', value)
     df.rename(columns=TREASURY_COL_MAPS, inplace=True)
     df.set_index('date', inplace=True)
-    return df.tz_localize('UTC')
+    df = df.tz_localize('UTC')
+    calendar = get_calendar('XSHG')
+    start = start.tz_localize('UTC')
+    end = end.tz_localize('UTC')
+    sessions = calendar.sessions_in_range(start, end)
+    # 务必与交易日历一致
+    return df.reindex(sessions).fillna(method='ffill')
