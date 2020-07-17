@@ -23,13 +23,13 @@ import numpy as np
 from numpy.lib.stride_tricks import as_strided
 import pandas as pd
 from pandas.tseries.offsets import BDay
-try:
-    from pandas_datareader import data as web
-except ImportError:
-    msg = ("Unable to import pandas_datareader. Suppressing import error and "
-           "continuing. All data reading functionality will raise errors; but "
-           "has been deprecated and will be removed in a later version.")
-    warnings.warn(msg)
+# try:
+#     from pandas_datareader import data as web
+# except ImportError:
+#     msg = ("Unable to import pandas_datareader. Suppressing import error and "
+#            "continuing. All data reading functionality will raise errors; but "
+#            "has been deprecated and will be removed in a later version.")
+#     warnings.warn(msg)
 from .deprecate import deprecated
 
 DATAREADER_DEPRECATION_WARNING = \
