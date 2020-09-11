@@ -67,10 +67,10 @@ class PerfAttribTestCase(unittest.TestCase):
                                                               factor_loadings)
 
         pd.testing.assert_frame_equal(expected_perf_attrib_output,
-                                      perf_attrib_output)
+                                      perf_attrib_output, check_freq=False)
 
         pd.testing.assert_frame_equal(expected_exposures_portfolio,
-                                      exposures_portfolio)
+                                      exposures_portfolio, check_freq=False)
 
         # test long and short positions
         positions = pd.Series([0.5, -0.5, 0.5, -0.5], index=index)
@@ -102,10 +102,10 @@ class PerfAttribTestCase(unittest.TestCase):
         )
 
         pd.testing.assert_frame_equal(expected_perf_attrib_output,
-                                      perf_attrib_output)
+                                      perf_attrib_output, check_freq=False)
 
         pd.testing.assert_frame_equal(expected_exposures_portfolio,
-                                      exposures_portfolio)
+                                      exposures_portfolio, check_freq=False)
 
         # test long and short positions with tilt exposure
         positions = pd.Series([1.0, -0.5, 1.0, -0.5], index=index)
@@ -137,10 +137,10 @@ class PerfAttribTestCase(unittest.TestCase):
         )
 
         pd.testing.assert_frame_equal(expected_perf_attrib_output,
-                                      perf_attrib_output)
+                                      perf_attrib_output, check_freq=False)
 
         pd.testing.assert_frame_equal(expected_exposures_portfolio,
-                                      exposures_portfolio)
+                                      exposures_portfolio, check_freq=False)
 
     def test_perf_attrib_regression(self):
 
